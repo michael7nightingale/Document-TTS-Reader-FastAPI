@@ -5,3 +5,4 @@
 venv
 model_russian_stt
 app/static/
+client.py
