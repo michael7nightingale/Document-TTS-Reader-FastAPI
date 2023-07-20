@@ -1,4 +1,5 @@
 import os.path
+from uuid import uuid4
 
 
 def get_name_and_extension(filename: str):
@@ -21,3 +22,7 @@ def path_to_static_url(filepath: str):
 
 def static_url_to_path(static_url: str):
     return os.path.join('app', static_url)
+
+
+def get_filename_salt(n: int = 5) -> str:
+    return str(uuid4())[:n]
