@@ -1,3 +1,5 @@
+from functools import wraps
+
 from .pdf import PDFViewer
 
 
@@ -8,6 +10,7 @@ extensions = {
 
 
 def match_extension(func):
+    @wraps(func)
     def inner(extension: str, *args, **kwargs):
         if extension in extensions:
             return getattr(PDFViewer, func.__name__)(*args, **kwargs)

@@ -1,7 +1,6 @@
-from uuid import uuid4
-
 from fastapi import Depends, Request, HTTPException
 from fastapi_authtools.exceptions import raise_permissions_error
+from uuid import uuid4
 import os
 
 from app.api.dependencies import get_document_repository
@@ -22,7 +21,8 @@ async def get_document(
         raise_permissions_error()
     if document is None:
         raise HTTPException(status_code=404, detail="Document is not found.")
-    return document
+    yield document
+    await document_repo.update_time_opened(document_id)
 
 
 async def get_synth_audio_filepath(

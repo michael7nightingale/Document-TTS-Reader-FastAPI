@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, ForeignKey, DateTime, Integer
+from sqlalchemy import Column, String, ForeignKey, DateTime, Integer, func
 
 from app.db import Base
 from app.db.models.base import TableMixin
+from app.services import now
 
 
 class Document(Base, TableMixin):
@@ -13,6 +14,6 @@ class Document(Base, TableMixin):
     pages = Column(Integer())
     current_page = Column(Integer())
     time_opened = Column(DateTime(timezone=True))
-    time_created = Column(DateTime(timezone=True))
+    time_created = Column(DateTime(timezone=True), default=now)
     document_url = Column(String(255))
     cover_url = Column(String(255))

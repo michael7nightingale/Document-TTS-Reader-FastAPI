@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Request, File, Depends, UploadFile
+from fastapi import APIRouter, Request, File, Depends, UploadFile, Header
 from fastapi.responses import FileResponse
 from fastapi_authtools import login_required
 import os
 
+from app.db.repositories import DocumentRepository
 from app.api.dependencies import (
     get_document_repository,
     get_document,
     get_synth_audio_filepath,
 
 )
-from app.db.repositories import DocumentRepository
 from app.services import (
     get_name_and_extension,
     path_to_static_url,
     static_url_to_path,
-    check_text,
+    check_text, get_filename_salt,
 
 )
 from app.services.documents import (
@@ -27,7 +27,7 @@ from app.services.documents import (
 documents_router = APIRouter(prefix='/documents')
 
 
-@documents_router.get("/my-documents")
+@documents_router.get("/my/all")
 @login_required
 async def my_documents(
         request: Request,
@@ -50,17 +50,25 @@ async def upload_document(
         os.makedirs(user_fullpath)
 
     filename, extension = get_name_and_extension(document_file.filename)
-
     if extension != "pdf":
         return None
-
     dirpath = f"{request.user.id}/{document_file.filename}"
     fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
+
+    n = 3
+    while os.path.exists(fullpath):
+        salt = get_filename_salt(n)
+        filename += f"_{salt}"
+        dirpath = f"{request.user.id}/{filename}.{extension}"
+        fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
+        n += 1
+
     with open(fullpath, "wb") as file:
         file.write(await document_file.read())
     cover_dirpath = f"{request.user.id}/{filename}_cover.png"
     cover_fullpath = os.path.join(request.app.state.STATIC_DIR, cover_dirpath)
-    pages_count = get_pages_count_and_cover(fullpath, cover_fullpath)
+    print(cover_fullpath)
+    pages_count = get_pages_count_and_cover(extension, fullpath, cover_fullpath)
     document = await document_repo.create(
         title=filename,
         extension=extension,
@@ -74,7 +82,7 @@ async def upload_document(
     return document
 
 
-@documents_router.get("/{document_id}")
+@documents_router.get("/my/{document_id}")
 @login_required
 async def document_get(
         request: Request,
@@ -83,7 +91,7 @@ async def document_get(
     return document
 
 
-@documents_router.post("/{document_id}/download")
+@documents_router.post("/my/{document_id}/download")
 @login_required
 async def upload_document(
         request: Request,
@@ -95,7 +103,7 @@ async def upload_document(
     )
 
 
-@documents_router.get("/{document_id}/text")
+@documents_router.get("/my/{document_id}/text")
 @login_required
 async def get_document_text(
         request: Request,
@@ -113,7 +121,7 @@ async def get_document_text(
         return {"detail": "Cannot find text to read."}
 
 
-@documents_router.get("/{document_id}/voice")
+@documents_router.get("/my/{document_id}/voice")
 @login_required
 async def get_document_voice(
         request: Request,
