@@ -48,9 +48,9 @@ class Server:
         self.app.state.auth_manager = AuthManager(
             app=self.app,
             user_model=UserCustomModel,
-            algorithm=self.settings.algorithm,
-            secret_key=self.settings.secret_key,
-            expire_minutes=self.settings.expire_minutes,
+            algorithm=self.settings.ALGORITHM,
+            secret_key=self.settings.SECRET_KEY,
+            expire_minutes=self.settings.EXPIRE_MINUTES,
         )
         # static files settings
         self.app.mount("/static", StaticFiles(directory="app/static/"), name='static')
