@@ -35,7 +35,6 @@ class BaseRepository:
             return new_obj
         except IntegrityError:
             await self._session.rollback()
-            return None
 
     async def get(self, id_: int | str) -> Model | None:
         """Get object by pk (id)"""

@@ -13,8 +13,9 @@ class UserRepository(BaseRepository):
     async def login(self, username: str, password: str):
         user = await self.get_by(username=username)
         if user is not None:
-            if verify_password(password, user.password):
-                return user
+            if user.is_active:
+                if verify_password(password, user.password):
+                    return user
 
     async def register(self, user_data: dict | BaseModel):
         if isinstance(user_data, BaseModel):
