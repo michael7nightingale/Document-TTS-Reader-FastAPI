@@ -1,14 +1,18 @@
-from vosk_tts.model import Model
-from vosk_tts.synth import Synth
-from uuid import uuid4
-import tempfile
-
-model = Model("model_russian_tts")
-synth = Synth(model)
+from gtts import gTTS
+from threading import Thread
 
 
-def synth_audio(text: str, filepath: str):
-    synth.synth(
+async def synth_audio(text: str, filepath: str, language: str) -> None:
+    audio = gTTS(
         text=text,
-        oname=filepath
+        lang=language,
+
     )
+    thread = Thread(
+        target=audio.save,
+        args=(filepath, )
+    )
+    thread.start()
+    thread.join()
+    print(2, filepath, language, text)
+    print(3)
