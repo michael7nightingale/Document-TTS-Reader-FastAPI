@@ -12,3 +12,6 @@ class DocumentRepository(BaseRepository):
 
     async def update_time_opened(self, id_: int | str):
         await super().update(id_, time_opened=now())
+
+    async def update_time_opened_and_page(self, id_: int | str, current_page: int):
+        await super().update(id_, time_opened=now(), current_page=current_page)

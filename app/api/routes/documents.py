@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Request, File, Depends, UploadFile, Header
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Request, File, Depends, UploadFile, Path, Body
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi_authtools import login_required
+from uuid import uuid4
 import os
 
 from app.db.repositories import DocumentRepository
@@ -10,6 +11,7 @@ from app.api.dependencies import (
     get_synth_audio_filepath,
 
 )
+from app.models.schemas import DocumentUpdate
 from app.services import (
     get_name_and_extension,
     path_to_static_url,
@@ -33,6 +35,7 @@ async def my_documents(
         request: Request,
         document_repo: DocumentRepository = Depends(get_document_repository)
 ):
+    """Endpoint for all documents of the user."""
     documents = await document_repo.filter(user_id=request.user.id)
     return documents
 
@@ -44,32 +47,43 @@ async def upload_document(
         document_file: UploadFile = File(),
         document_repo: DocumentRepository = Depends(get_document_repository),
 ):
+    """Endpoint for uploading document to the collection."""
+    # check if user`s documents` folder exists
     user_dirpath = f"{request.user.id}"
     user_fullpath = os.path.join(request.app.state.STATIC_DIR, user_dirpath)
     if not os.path.exists(user_fullpath):
         os.makedirs(user_fullpath)
 
+    # saving document
+    document_uuid = str(uuid4())
     filename, extension = get_name_and_extension(document_file.filename)
-    if extension != "pdf":
-        return None
+    if extension not in ("pdf", ):
+        return JSONResponse(
+            content={"detail": f"{Exception} not in available extensions: `pdf`."},
+            status_code=400
+        )
     dirpath = f"{request.user.id}/{document_file.filename}"
     fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
 
-    n = 3
+    # if this filepath is busy
+    salt_degree = 3
     while os.path.exists(fullpath):
-        salt = get_filename_salt(n)
+        salt = get_filename_salt(salt_degree)
         filename += f"_{salt}"
-        dirpath = f"{request.user.id}/{filename}.{extension}"
+        dirpath = f"{request.user.id}/{document_uuid}/{filename}.{extension}"
         fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
-        n += 1
+        salt_degree += 1
 
     with open(fullpath, "wb") as file:
         file.write(await document_file.read())
-    cover_dirpath = f"{request.user.id}/{filename}_cover.png"
+
+    # saving document`s cove image (1st page)
+    cover_dirpath = f"{request.user.id}/{document_uuid}/{filename}_cover.png"
     cover_fullpath = os.path.join(request.app.state.STATIC_DIR, cover_dirpath)
-    print(cover_fullpath)
+    # creating document instance
     pages_count = get_pages_count_and_cover(extension, fullpath, cover_fullpath)
     document = await document_repo.create(
+        id=document_uuid,
         title=filename,
         extension=extension,
         document_url=path_to_static_url(fullpath),
@@ -88,15 +102,42 @@ async def document_get(
         request: Request,
         document=Depends(get_document)
 ):
+    """Get single document information."""
     return document
+
+
+@documents_router.delete("/my/{document_id}")
+@login_required
+async def document_get(
+        request: Request,
+        document_id: str = Path(),
+        document_repo: DocumentRepository = Depends(get_document_repository)
+):
+    """Get single document information."""
+    await document_repo.delete(document_id)
+    return {"detail": f"Document {document_id} is deleted."}
+
+
+@documents_router.patch("/my/{document_id}")
+@login_required
+async def document_get(
+        request: Request,
+        document_id: str = Path(),
+        update_data: DocumentUpdate = Body(),
+        document_repo: DocumentRepository = Depends(get_document_repository)
+):
+    """Get single document information."""
+    await document_repo.update(document_id, **update_data.dict())
+    return {"detail": f"Document {document_id} is updated."}
 
 
 @documents_router.post("/my/{document_id}/download")
 @login_required
-async def upload_document(
+async def download_document(
         request: Request,
         document=Depends(get_document)
 ):
+    """Download a single document."""
     return FileResponse(
         path=static_url_to_path(document.document_url),
         filename=f"{document.title}.{document.extension}",
@@ -110,6 +151,7 @@ async def get_document_text(
         document=Depends(get_document),
         page: int | None = None
 ):
+    """Endpoint for getting text from the document."""
     text = get_text(
         extension=document.extension,
         filepath=static_url_to_path(document.document_url),
@@ -125,13 +167,17 @@ async def get_document_text(
 @login_required
 async def get_document_voice(
         request: Request,
+        page: int,
         document=Depends(get_document),
-        voice_filepath=Depends(get_synth_audio_filepath),
-        page: int | None = None
+        voice_filepath: dict = Depends(get_synth_audio_filepath)
 ):
-    if voice_filepath is None:
-        return {"detail": "Cannot find text to read."}
+    """Endpoint for getting voice tts from the document CURRENT PAGE."""
+    if voice_filepath["status"] != 200:
+        return JSONResponse(
+            content=voice_filepath['detail'],
+            status_code=voice_filepath['status_code']
+        )
     return FileResponse(
-        path=voice_filepath,
+        path=voice_filepath['filepath'],
         filename=f"{document.title}_page{page}.wav" if page is not None else f"{document.title}.wav"
     )
