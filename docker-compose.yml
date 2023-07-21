@@ -1,0 +1,37 @@
+version: "5"
+
+services:
+  web-app:
+    build: .
+    environment:
+      - DOCKER=1
+    env_file:
+      - ./.docker.env
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head &&
+              uvicorn app.main:create_app --host 0.0.0.0"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=reader
+
+  redis:
+    image: redis:5
+
+  celery:
+    build: .
+    command: celery -A app.tasks.worker.celery worker --loglevel=info --logfile=app/logs/celery.log
+    environment:
+      - DOCKER=1
+    env_file:
+      - ./.docker.env
+    depends_on:
+      - web-app
+      - redis
