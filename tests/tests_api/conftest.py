@@ -1,6 +1,5 @@
 import pytest_asyncio
 from httpx import AsyncClient
-import os
 
 from app.api.routes import (
     main_router,
