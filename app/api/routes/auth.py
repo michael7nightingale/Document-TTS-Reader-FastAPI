@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Body, Request, Depends, Path
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi_authtools import login_required
 from fastapi_authtools.models import UsernamePasswordToken
 from fastapi_authtools.exceptions import raise_invalid_credentials
 
@@ -86,3 +87,9 @@ async def register(
             content={"detail": "Something went wrong."},
             status_code=400
         )
+
+
+@auth_router.get("/me")
+@login_required
+async def me(request: Request):
+    return request.user
