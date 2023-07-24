@@ -38,7 +38,7 @@ async def get_token(
 ):
     """Token get view."""
     user = await user_repo.login(
-        **user_token_data.dict()
+        **user_token_data.model_dump()
     )
     if user is None:
         raise_invalid_credentials()
@@ -72,21 +72,21 @@ async def register(
 
 
 @auth_router.get("/activation/{user_id}/{token}")
-async def register(
+async def activate(
         request: Request,
         user_id: str = Path(),
         token: str = Path(),
         user_repo: UserRepository = Depends(get_user_repository)
 ):
     """Registration POST view."""
-    if confirm_token(token):
-        await user_repo.update(user_id, is_active=True)
-        return "User is activated."
-    else:
-        return JSONResponse(
-            content={"detail": "Something went wrong."},
-            status_code=400
-        )
+    if email := confirm_token(token):
+        user = await user_repo.activate(user_id, email)
+        if user is not None:
+            return "User is activated."
+    return JSONResponse(
+        content={"detail": "Something went wrong."},
+        status_code=400
+    )
 
 
 @auth_router.get("/me")

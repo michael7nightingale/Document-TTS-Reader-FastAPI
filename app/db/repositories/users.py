@@ -19,12 +19,18 @@ class UserRepository(BaseRepository):
 
     async def register(self, user_data: dict | BaseModel):
         if isinstance(user_data, BaseModel):
-            user_data = user_data.dict()
+            user_data = user_data.model_dump()
         else:
             user_data = user_data.copy()
         user_data.update(password=hash_password(user_data['password']))
         new_user = await self.create(**user_data)
         return new_user
 
-    async def activate(self, user_id: str):
-        await super().update(user_id, is_active=True)
+    async def activate(self, user_id: str, email: str):
+        user = await super().get(user_id)
+        if user is None:
+            return None
+        if user.email == email:
+            user.is_active = True
+            await self.save(user)
+            return user
