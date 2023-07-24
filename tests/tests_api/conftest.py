@@ -70,9 +70,26 @@ async def users_test_data(app, user1, user2):
     async with app.state.pool() as session:
         users_repo = UserRepository(session)
         user1_ = await users_repo.register(user1)
-        await users_repo.activate(user1_.id)
+        await users_repo.activate(user1_.id, user1_.email)
         user2_ = await users_repo.register(user2)
-        await users_repo.activate(user2_.id)
+        await users_repo.activate(user2_.id, user2_.email)
+
+
+@pytest_asyncio.fixture
+def user_not_activated():
+    return {
+        "username": "Notactive",
+        "password": "veryactivenot",
+        "email": 'notactive229@gmail.com'
+    }
+
+
+@pytest_asyncio.fixture
+async def not_active_user(app, user_not_activated):
+    async with app.state.pool() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.register(user_not_activated)
+        yield user
 
 
 def url_for(router):
