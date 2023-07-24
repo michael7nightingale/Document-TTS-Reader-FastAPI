@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     class Config:
         if os.getenv("DOCKER"):
             env_file = ".docker.env"
+        elif os.getenv("TEST"):
+            env_file = ".test.env"
         else:
             env_file = ".dev.env"
 
