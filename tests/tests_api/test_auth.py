@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 
 from app.services.token import generate_token

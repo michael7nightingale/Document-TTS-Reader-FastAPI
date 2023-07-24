@@ -62,7 +62,7 @@ async def register(
         )
     token = generate_token(email=new_user.email)
     link = str(request.base_url) + "api/v1/auth/activation/" + f"{new_user.id}/" + token
-    message = f"""Finish registration by following the link: 
+    message = f"""Finish registration by following the link:
                   {link}"""
     send_message_task.run(
         "User activation.", [new_user.email], message

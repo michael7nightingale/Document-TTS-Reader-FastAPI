@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 
 from tests_api.conftest import get_main_url

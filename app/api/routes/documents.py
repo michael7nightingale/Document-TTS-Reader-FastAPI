@@ -108,7 +108,7 @@ async def document_get(
 
 @documents_router.delete("/my/{document_id}")
 @login_required
-async def document_get(
+async def document_delete(
         request: Request,
         document_id: str = Path(),
         document_repo: DocumentRepository = Depends(get_document_repository)
@@ -120,7 +120,7 @@ async def document_get(
 
 @documents_router.patch("/my/{document_id}")
 @login_required
-async def document_get(
+async def document_update(
         request: Request,
         document_id: str = Path(),
         update_data: DocumentUpdate = Body(),
