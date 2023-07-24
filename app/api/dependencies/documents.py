@@ -19,12 +19,12 @@ async def get_document(
         page: int | None = None
 ):
     document = await document_repo.get(document_id)
-    if document.user_id != request.user.id:
-        raise_permissions_error()
     if document is None:
         raise HTTPException(status_code=404, detail="Document is not found.")
+    if document.user_id != request.user.id:
+        raise_permissions_error()
     yield document
-    if page is None:
+    if page is None or not (0 < page <= document.pages):
         await document_repo.update_time_opened(document_id)
     else:
         await document_repo.update_time_opened_and_page(document_id, page)
@@ -35,6 +35,9 @@ async def get_synth_audio_filepath(
         document=Depends(get_document),
         page: int | None = None
 ):
+    if not (0 < page <= document.pages):
+        yield {"status_code": 400, "detail": f"Page is out of range: from 1 to {document.pages}."}
+        return
     fullpath = os.path.join(
         request.app.state.STATIC_DIR, request.user.id, str(uuid4()) + ".mp3"
     )
@@ -43,10 +46,10 @@ async def get_synth_audio_filepath(
         filepath=static_url_to_path(document.document_url),
         page_number=page
     )
+    if text is None or not check_text(text):
+        yield {"status_code": 400, "detail": "Cannot find the text."}
+        return
     lang = detect(text)
-    if check_text(text):
-        await synth_audio(text, fullpath, lang)
-        yield {"status": 200, "filepath": fullpath}
-        os.remove(fullpath)
-    else:
-        yield {"status": 400, "detail": "Cannot find the text."}
+    await synth_audio(text, fullpath, lang)
+    yield {"status_code": 200, "filepath": fullpath}
+    os.remove(fullpath)

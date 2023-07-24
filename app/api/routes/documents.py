@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi_authtools import login_required
 from uuid import uuid4
 import os
+from shutil import rmtree
 
 from app.db.repositories import DocumentRepository
 from app.api.dependencies import (
@@ -11,12 +12,11 @@ from app.api.dependencies import (
     get_synth_audio_filepath,
 
 )
-from app.models.schemas import DocumentUpdate
+from app.models.schemas import Document
 from app.services import (
     get_name_and_extension,
-    path_to_static_url,
     static_url_to_path,
-    check_text, get_filename_salt,
+    check_text,
 
 )
 from app.services.documents import (
@@ -49,8 +49,8 @@ async def upload_document(
 ):
     """Endpoint for uploading document to the collection."""
     # check if user`s documents` folder exists
-    user_dirpath = f"{request.user.id}"
-    user_fullpath = os.path.join(request.app.state.STATIC_DIR, user_dirpath)
+    user_path = f"{request.user.id}"
+    user_fullpath = os.path.join(request.app.state.STATIC_DIR, user_path)
     if not os.path.exists(user_fullpath):
         os.makedirs(user_fullpath)
 
@@ -59,39 +59,31 @@ async def upload_document(
     filename, extension = get_name_and_extension(document_file.filename)
     if extension not in ("pdf", ):
         return JSONResponse(
-            content={"detail": f"{Exception} not in available extensions: `pdf`."},
+            content={"detail": f"{extension} not in available extensions: `pdf`."},
             status_code=400
         )
-    dirpath = f"{request.user.id}/{document_file.filename}"
-    fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
-
-    # if this filepath is busy
-    salt_degree = 3
-    while os.path.exists(fullpath):
-        salt = get_filename_salt(salt_degree)
-        filename += f"_{salt}"
-        dirpath = f"{request.user.id}/{document_uuid}/{filename}.{extension}"
-        fullpath = os.path.join(request.app.state.STATIC_DIR, dirpath)
-        salt_degree += 1
-
-    with open(fullpath, "wb") as file:
+    document_path = os.path.join(user_path, document_uuid)
+    document_fullpath = os.path.join(request.app.state.STATIC_DIR, document_path)
+    os.makedirs(document_fullpath)
+    pdf_file_path = os.path.join(document_path, f"{filename}.{extension}")
+    pdf_file_fullpath = os.path.join(request.app.state.STATIC_DIR, pdf_file_path)
+    with open(pdf_file_fullpath, "wb") as file:
         file.write(await document_file.read())
 
     # saving document`s cove image (1st page)
-    cover_dirpath = f"{request.user.id}/{document_uuid}/{filename}_cover.png"
-    cover_fullpath = os.path.join(request.app.state.STATIC_DIR, cover_dirpath)
+    cover_path = os.path.join(document_path, f"{filename}_cover.png")
+    cover_fullpath = os.path.join(request.app.state.STATIC_DIR, cover_path)
     # creating document instance
-    pages_count = get_pages_count_and_cover(extension, fullpath, cover_fullpath)
+    pages_count = get_pages_count_and_cover(extension, pdf_file_fullpath, cover_fullpath)
     document = await document_repo.create(
         id=document_uuid,
         title=filename,
         extension=extension,
-        document_url=path_to_static_url(fullpath),
+        document_url=pdf_file_path,
         user_id=request.user.id,
         pages=pages_count,
         current_page=0,
-        cover_url=path_to_static_url(cover_fullpath),
-
+        cover_url=cover_path
     )
     return document
 
@@ -113,9 +105,13 @@ async def document_delete(
         document_id: str = Path(),
         document_repo: DocumentRepository = Depends(get_document_repository)
 ):
-    """Get single document information."""
+    """Delete document from db and its files."""
     await document_repo.delete(document_id)
-    return {"detail": f"Document {document_id} is deleted."}
+    document_fullpath = os.path.join(request.app.state.STATIC_DIR, request.user.id, document_id)
+    if os.path.exists(document_fullpath):
+        rmtree(document_fullpath)
+        return {"detail": f"Document {document_id} is deleted."}
+    return {"detail": f"Document is already deleted."}
 
 
 @documents_router.patch("/my/{document_id}")
@@ -123,11 +119,11 @@ async def document_delete(
 async def document_update(
         request: Request,
         document_id: str = Path(),
-        update_data: DocumentUpdate = Body(),
+        update_data: Document = Body(),
         document_repo: DocumentRepository = Depends(get_document_repository)
 ):
-    """Get single document information."""
-    await document_repo.update(document_id, **update_data.dict())
+    """Update document."""
+    await document_repo.update(document_id, **update_data.model_dump())
     return {"detail": f"Document {document_id} is updated."}
 
 
@@ -152,15 +148,19 @@ async def get_document_text(
         page: int | None = None
 ):
     """Endpoint for getting text from the document."""
+    if not (0 < page <= document.pages):
+        return JSONResponse(
+            content={'detail': f"Page is out of range: from 1 to {document.pages}."},
+            status_code=400
+        )
     text = get_text(
         extension=document.extension,
         filepath=static_url_to_path(document.document_url),
         page_number=page
     )
-    if check_text(text):
-        return {"text": text}
-    else:
+    if text is None or not check_text(text):
         return {"detail": "Cannot find text to read."}
+    return {"text": text}
 
 
 @documents_router.get("/my/{document_id}/voice")
@@ -172,7 +172,7 @@ async def get_document_voice(
         voice_filepath: dict = Depends(get_synth_audio_filepath)
 ):
     """Endpoint for getting voice tts from the document CURRENT PAGE."""
-    if voice_filepath["status"] != 200:
+    if voice_filepath["status_code"] != 200:
         return JSONResponse(
             content=voice_filepath['detail'],
             status_code=voice_filepath['status_code']

@@ -5,5 +5,5 @@ class DocumentDownload(BaseModel):
     document_id: str
 
 
-class DocumentUpdate(BaseModel):
+class Document(BaseModel):
     title: str | None = None
