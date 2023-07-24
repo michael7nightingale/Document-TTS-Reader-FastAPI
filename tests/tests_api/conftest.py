@@ -15,8 +15,7 @@ from app.db.repositories import UserRepository
 
 @pytest_asyncio.fixture
 async def app():
-    os.environ.setdefault("TEST", "1")
-    server = Server()
+    server = Server(test=True)
     async with server.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield server.app

@@ -3,7 +3,7 @@ from fastapi_authtools import AuthManager
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from starlette.staticfiles import StaticFiles
 
-from app.core.config import get_app_settings
+from app.core.config import get_app_settings, get_test_app_settings
 from app.api.routes import __api_routers__
 from app.models.schemas import UserCustomModel
 from app.db import create_engine, create_pool
@@ -11,9 +11,12 @@ from app.db.events import create_superuser
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, test: bool = False):
         self._app = FastAPI()
-        self._settings = get_app_settings()
+        if test:
+            self._settings = get_test_app_settings()
+        else:
+            self._settings = get_app_settings()
         self._engine: AsyncEngine
         self._pool: async_sessionmaker
 
@@ -58,6 +61,7 @@ class Server:
 
     def _configurate_db(self) -> None:
         """Configurate database."""
+        print(self.settings.db_uri)
         self._engine = create_engine(self.settings.db_uri)
         self._pool = create_pool(self.engine)
         self.app.state.pool = self.pool
