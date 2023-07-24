@@ -111,7 +111,7 @@ async def document_delete(
     if os.path.exists(document_fullpath):
         rmtree(document_fullpath)
         return {"detail": f"Document {document_id} is deleted."}
-    return {"detail": f"Document is already deleted."}
+    return {"detail": "Document is already deleted."}
 
 
 @documents_router.patch("/my/{document_id}")
