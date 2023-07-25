@@ -36,7 +36,7 @@ async def get_synth_audio_filepath(
         page: int | None = None
 ):
     if not (0 < page <= document.pages):
-        yield {"status_code": 400, "detail": f"Page is out of range: from 1 to {document.pages}."}
+        yield {"status_code": 400, "content": {'detail': f"Page is out of range: from 1 to {document.pages}."}}
         return
     fullpath = os.path.join(
         request.app.state.STATIC_DIR, request.user.id, str(uuid4()) + ".mp3"
@@ -47,7 +47,7 @@ async def get_synth_audio_filepath(
         page_number=page
     )
     if text is None or not check_text(text):
-        yield {"status_code": 400, "detail": "Cannot find the text."}
+        yield {"status_code": 400, "content": {'detail': "Cannot find the text."}}
         return
     lang = detect(text)
     await synth_audio(text, fullpath, lang)

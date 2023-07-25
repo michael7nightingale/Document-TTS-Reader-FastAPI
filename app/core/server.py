@@ -61,7 +61,6 @@ class Server:
 
     def _configurate_db(self) -> None:
         """Configurate database."""
-        print(self.settings.db_uri)
         self._engine = create_engine(self.settings.db_uri)
         self._pool = create_pool(self.engine)
         self.app.state.pool = self.pool

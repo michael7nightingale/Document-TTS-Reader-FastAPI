@@ -174,7 +174,7 @@ async def get_document_voice(
     """Endpoint for getting voice tts from the document CURRENT PAGE."""
     if voice_filepath["status_code"] != 200:
         return JSONResponse(
-            content=voice_filepath['detail'],
+            content=voice_filepath['content'],
             status_code=voice_filepath['status_code']
         )
     return FileResponse(
