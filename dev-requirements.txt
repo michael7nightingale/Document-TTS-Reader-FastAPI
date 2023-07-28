@@ -1,0 +1,10 @@
+aiosqlite==0.19.0
+iniconfig==2.0.0
+packaging==23.1
+pluggy==1.2.0
+pytest==7.4.0
+pytest_asyncio==0.21.1
+flake8==6.0.0
+mccabe==0.7.0
+pycodestyle==2.10.0
+pyflakes==3.0.1
