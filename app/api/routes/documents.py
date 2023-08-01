@@ -5,14 +5,14 @@ from uuid import uuid4
 import os
 from shutil import rmtree
 
-from app.db.repositories import DocumentRepository
 from app.api.dependencies import (
-    get_document_repository,
     get_document,
     get_synth_audio_filepath,
 
 )
-from app.models.schemas import Document
+from app.api.dependencies.services import get_document_service
+from app.db.services import DocumentService
+from app.models.schemas import DocumentUpdate
 from app.services import (
     get_name_and_extension,
     static_url_to_path,
@@ -33,10 +33,10 @@ documents_router = APIRouter(prefix='/documents')
 @login_required
 async def my_documents(
         request: Request,
-        document_repo: DocumentRepository = Depends(get_document_repository)
+        document_service: DocumentService = Depends(get_document_service)
 ):
     """Endpoint for all documents of the user."""
-    documents = await document_repo.filter(user_id=request.user.id)
+    documents = await document_service.filter(user_id=request.user.id)
     return documents
 
 
@@ -45,7 +45,7 @@ async def my_documents(
 async def upload_document(
         request: Request,
         document_file: UploadFile = File(),
-        document_repo: DocumentRepository = Depends(get_document_repository),
+        document_service: DocumentService = Depends(get_document_service)
 ):
     """Endpoint for uploading document to the collection."""
     # check if user`s documents` folder exists
@@ -75,8 +75,8 @@ async def upload_document(
     cover_fullpath = os.path.join(request.app.state.STATIC_DIR, cover_path)
     # creating document instance
     pages_count = get_pages_count_and_cover(extension, pdf_file_fullpath, cover_fullpath)
-    document = await document_repo.create(
-        id=document_uuid,
+    document = await document_service.create(
+        _id=document_uuid,
         title=filename,
         extension=extension,
         document_url=pdf_file_path,
@@ -103,10 +103,10 @@ async def document_get(
 async def document_delete(
         request: Request,
         document_id: str = Path(),
-        document_repo: DocumentRepository = Depends(get_document_repository)
+        document_service: DocumentService = Depends(get_document_service)
 ):
     """Delete document from db and its files."""
-    await document_repo.delete(document_id)
+    await document_service.delete(document_id)
     document_fullpath = os.path.join(request.app.state.STATIC_DIR, request.user.id, document_id)
     if os.path.exists(document_fullpath):
         rmtree(document_fullpath)
@@ -119,11 +119,11 @@ async def document_delete(
 async def document_update(
         request: Request,
         document_id: str = Path(),
-        update_data: Document = Body(),
-        document_repo: DocumentRepository = Depends(get_document_repository)
+        update_data: DocumentUpdate = Body(),
+        document_service: DocumentService = Depends(get_document_service)
 ):
     """Update document."""
-    await document_repo.update(document_id, **update_data.model_dump())
+    await document_service.update(document_id, **update_data.model_dump())
     return {"detail": f"Document {document_id} is updated."}
 
 
@@ -148,11 +148,12 @@ async def get_document_text(
         page: int | None = None
 ):
     """Endpoint for getting text from the document."""
-    if not (0 < page <= document.pages):
-        return JSONResponse(
-            content={'detail': f"Page is out of range: from 1 to {document.pages}."},
-            status_code=400
-        )
+    if page:
+        if not (0 < page <= document.pages):
+            return JSONResponse(
+                content={'detail': f"Page is out of range: from 1 to {document.pages}."},
+                status_code=400
+            )
     text = get_text(
         extension=document.extension,
         filepath=static_url_to_path(document.document_url),
