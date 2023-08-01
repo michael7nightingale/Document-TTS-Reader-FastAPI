@@ -4,13 +4,11 @@ from fastapi_authtools import login_required
 from fastapi_authtools.models import UsernamePasswordToken
 from fastapi_authtools.exceptions import raise_invalid_credentials
 
-from app.api.dependencies import get_user_register_data
-from app.api.dependencies.services import get_user_service
-from app.models.schemas import UserRegister, UserCustomModel
+from app.api.dependencies import get_user_register_data, get_user_service
+from app.models.schemas import UserRegister, UserCustomModel, UserShow
 from app.core.config import get_app_settings
 from app.db.services import UserService
-from app.models.schemas.users import UserShow
-from app.services.token import generate_token, confirm_token
+from app.services import generate_token, confirm_token
 from app.tasks.email import send_message_task
 
 
