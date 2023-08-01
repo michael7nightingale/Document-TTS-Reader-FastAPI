@@ -1,16 +1,7 @@
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncEngine
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
-def create_engine(db_uri: str) -> AsyncEngine:
-    return create_async_engine(db_uri)
-
-
-def create_pool(engine: AsyncEngine) -> async_sessionmaker:
-    return async_sessionmaker(
-        bind=engine,
-        expire_on_commit=False
-    )
-
-
-Base = declarative_base()
+def create_db(db_uri: str, db_name):
+    client_ = AsyncIOMotorClient(db_uri, connect=False)
+    db_ = getattr(client_, db_name)
+    return db_
