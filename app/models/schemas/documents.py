@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Document(BaseModel):
-    _id: str
+    id: str = Field(alias="_id")
     user_id: str
     title: str
     pages: int

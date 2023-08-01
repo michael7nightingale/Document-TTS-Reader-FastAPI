@@ -148,7 +148,7 @@ async def get_document_text(
         page: int | None = None
 ):
     """Endpoint for getting text from the document."""
-    if page:
+    if page is not None:
         if not (0 < page <= document.pages):
             return JSONResponse(
                 content={'detail': f"Page is out of range: from 1 to {document.pages}."},

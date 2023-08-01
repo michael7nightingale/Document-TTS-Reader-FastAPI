@@ -67,11 +67,11 @@ class TestMain:
         assert response.json() == {"detail": "Invalid credentials provided."}
 
     async def test_activation_success(self, client: AsyncClient, not_active_user, user_not_activated: dict):
-        assert not not_active_user.is_active
+        assert not not_active_user['is_active']
         activation_link = get_auth_url(
             "activate",
-            user_id=not_active_user.id,
-            token=generate_token(not_active_user.email)
+            user_id=not_active_user['_id'],
+            token=generate_token(not_active_user['email'])
         )
         response = await client.get(activation_link)
         assert response.status_code == status.HTTP_200_OK
@@ -87,11 +87,11 @@ class TestMain:
         assert "access_token" in response.json()
 
     async def test_activation_failed(self, client: AsyncClient, not_active_user, user_not_activated: dict):
-        assert not not_active_user.is_active
+        assert not not_active_user['is_active']
         activation_link = get_auth_url(
             "activate",
             user_id="0000-0000-0000-0000",
-            token=generate_token(not_active_user.email)
+            token=generate_token(not_active_user['email'])
         )
         response = await client.get(activation_link)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -111,4 +111,4 @@ class TestMain:
         assert response.json()["email"] == user2['email']
         assert response.json()["is_active"]
         assert response.json()["is_authenticated"]
-        assert "id" in response.json()
+        assert "_id" in response.json()

@@ -18,7 +18,7 @@ async def get_document(
         page: int | None = None,
         document_service: DocumentService = Depends(get_document_service)
 ):
-    document = await document_service.get(document_service)
+    document = await document_service.get(document_id)
     if document is None:
         raise HTTPException(status_code=404, detail="Document is not found.")
     if document.user_id != request.user.id:
