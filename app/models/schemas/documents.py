@@ -1,9 +1,36 @@
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel
+
+
+class Document(BaseModel):
+    _id: str
+    user_id: str
+    title: str
+    pages: int
+    current_page: int
+    extension: str
+    cover_url: str
+    document_url: str
+    time_created: datetime
+    time_opened: Optional[datetime] = None
 
 
 class DocumentDownload(BaseModel):
     document_id: str
 
 
-class Document(BaseModel):
+class DocumentShow(BaseModel):
+    title: str
+    pages: int
+    current_page: int
+    extension: str
+    cover_url: str
+    document_url: str
+    time_created: datetime
+    time_opened: Optional[datetime] = None
+
+
+class DocumentUpdate(BaseModel):
     title: str | None = None
