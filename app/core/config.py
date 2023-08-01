@@ -29,8 +29,6 @@ class BaseAppSettings(BaseSettings):
 
 
 class DevSettings(BaseAppSettings):
-    DB_USER: str
-    DB_PASSWORD: str
     DB_DRIVER: str
     DB_HOST: str
     DB_PORT: str
@@ -39,7 +37,7 @@ class DevSettings(BaseAppSettings):
     @property
     def db_uri(self) -> str:
         host_address = gethostbyname(self.DB_HOST)
-        return f"{self.DB_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{host_address}:{self.DB_PORT}/{self.DB_NAME}"
+        return f"{self.DB_DRIVER}://{host_address}:{self.DB_PORT}"
 
     class Config:
         if os.getenv("DOCKER"):
@@ -54,6 +52,8 @@ def get_app_settings() -> DevSettings:
 
 class TestSettings(BaseAppSettings):
     DB_DRIVER: str
+    DB_HOST: str
+    DB_PORT: str
     DB_NAME: str
 
     github_redirect_url: str = "https://github.com/michael7nightingale/Calculations-FastAPI"
