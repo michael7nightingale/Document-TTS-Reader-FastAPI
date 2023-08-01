@@ -1,3 +1,4 @@
+import pymongo
 from fastapi import FastAPI
 from fastapi_authtools import AuthManager
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -5,9 +6,8 @@ from starlette.staticfiles import StaticFiles
 
 from app.core.config import get_app_settings, get_test_app_settings
 from app.api.routes import __api_routers__
+from app.db import create_db
 from app.models.schemas import UserCustomModel
-from app.db import create_engine, create_pool
-from app.db.events import create_superuser
 
 
 class Server:
@@ -31,13 +31,15 @@ class Server:
     def settings(self):
         return self._settings
 
-    @property
-    def engine(self) -> AsyncEngine:
-        return self._engine
-
-    @property
-    def pool(self) -> async_sessionmaker:
-        return self._pool
+    def _configurate_db(self):
+        db = create_db(
+            db_uri=self.settings.db_uri,
+            db_name=self.settings.DB_NAME
+        )
+        db.users.create_index(
+            [("username", pymongo.DESCENDING), ("email", pymongo.DESCENDING)], unique=True
+        )
+        self.app.state.db = db
 
     def _configurate_app(self) -> None:
         """Configurate FastAPI application."""
@@ -59,20 +61,8 @@ class Server:
         self.app.mount("/static", StaticFiles(directory="app/static/"), name='static')
         self.app.state.STATIC_DIR = "app/static/"
 
-    def _configurate_db(self) -> None:
-        """Configurate database."""
-        self._engine = create_engine(self.settings.db_uri)
-        self._pool = create_pool(self.engine)
-        self.app.state.pool = self.pool
-
     async def _on_startup_event(self):
         """Startup handler."""
-        async with self.pool() as session:
-            await create_superuser(
-                session=session,
-                settings=self.settings
-            )
 
     async def _on_shutdown_event(self):
         """Shutdown handler."""
-        await self.engine.dispose()
