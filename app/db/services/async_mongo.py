@@ -6,9 +6,8 @@ def wrap_model(model):
     def wrapper(func):
         async def inner(*args, **kwargs):
             res = await func(*args, **kwargs)
-            if "_id" in res:
-                res['id'] = str(res["_id"])
-                del res['_id']
+            if res is None:
+                return
             return model(**res)
         return inner
     return wrapper
