@@ -1,2 +1,2 @@
-from .users import UserRegister, UserCustomModel
-from .documents import DocumentDownload, Document
+from .users import UserRegister, UserCustomModel, UserShow
+from .documents import DocumentDownload, DocumentUpdate, DocumentShow, Document

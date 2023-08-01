@@ -10,17 +10,12 @@ services:
     ports:
       - "8000:8000"
     command: >
-      sh -c "alembic upgrade head &&
-              uvicorn app.main:create_app --host 0.0.0.0"
+      sh -c "uvicorn app.main:create_app --host 0.0.0.0"
     depends_on:
-      - db
+      - mongodb
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=reader
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
 
   redis:
     image: redis:5

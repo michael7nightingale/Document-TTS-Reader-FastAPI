@@ -29,21 +29,19 @@ class BaseAppSettings(BaseSettings):
 
 
 class DevSettings(BaseAppSettings):
-    DB_USER: str
-    DB_PASSWORD: str
     DB_DRIVER: str
     DB_HOST: str
     DB_PORT: str
-    DB_NAME: str
 
     @property
     def db_uri(self) -> str:
-        host_address = gethostbyname(self.DB_HOST)
-        return f"{self.DB_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{host_address}:{self.DB_PORT}/{self.DB_NAME}"
+        # host_address = gethostbyname(self.DB_HOST)
+        host_address = self.DB_HOST
+        return f"{self.DB_DRIVER}://{host_address}:{self.DB_PORT}"
 
     class Config:
         if os.getenv("DOCKER"):
-            env_file = ".test.env"
+            env_file = ".docker.env"
         else:
             env_file = ".dev.env"
 
@@ -54,6 +52,8 @@ def get_app_settings() -> DevSettings:
 
 class TestSettings(BaseAppSettings):
     DB_DRIVER: str
+    DB_HOST: str
+    DB_PORT: str
     DB_NAME: str
 
     github_redirect_url: str = "https://github.com/michael7nightingale/Calculations-FastAPI"
@@ -61,7 +61,8 @@ class TestSettings(BaseAppSettings):
 
     @property
     def db_uri(self) -> str:
-        return f"{self.DB_DRIVER}:///{self.DB_NAME}"
+        host_address = gethostbyname(self.DB_HOST)
+        return f"{self.DB_DRIVER}://{host_address}:{self.DB_PORT}"
 
     @property
     def github_login_url(self) -> str:

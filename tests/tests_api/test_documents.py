@@ -24,7 +24,7 @@ class TestDocument:
         assert single_document["current_page"] == 0
 
     async def test_get_document(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(get_document_url("document_get", document_id=document_id))
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -32,7 +32,7 @@ class TestDocument:
         assert data["extension"] == "pdf"
         assert data["pages"] == 100
         assert data["current_page"] == 0
-        assert data['id'] == document_id
+        assert data['_id'] == document_id
         assert "user_id" in data
         assert "document_url" in data
         assert "cover_url" in data
@@ -49,11 +49,11 @@ class TestDocument:
         assert data["extension"] == "pdf"
         assert data["pages"] == 772
         assert data["current_page"] == 0
-        assert "id" in data
+        assert "_id" in data
         assert "user_id" in data
         assert "document_url" in data
         assert "cover_url" in data
-        document_id = data['id']
+        document_id = data['_id']
 
         my_documents_new_response = await client_user1.get(get_document_url("my_documents"))
         assert len(my_documents_new_response.json()) == 2
@@ -66,7 +66,7 @@ class TestDocument:
         assert file_data["extension"] == "pdf" == data['extension']
         assert file_data["pages"] == 772 == data['pages']
         assert file_data["current_page"] == 0 == data['current_page']
-        assert "id" in file_data and file_data['id'] == data['id']
+        assert "_id" in file_data and file_data['_id'] == data['_id']
         assert "user_id" in file_data and file_data['user_id'] == data['user_id']
         assert "document_url" in file_data and file_data['document_url'] == data['document_url']
         assert "cover_url" in file_data and file_data['cover_url'] == data['cover_url']
@@ -84,7 +84,7 @@ class TestDocument:
         assert len(my_documents_new_response.json()) == 1
 
     async def test_document_download(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
 
         response = await client_user1.post(
             get_document_url("download_document", document_id=document_id)
@@ -93,7 +93,7 @@ class TestDocument:
         assert response.content
 
     async def test_document_delete_success(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.delete(
             get_document_url("document_delete", document_id=document_id)
         )
@@ -104,7 +104,7 @@ class TestDocument:
         assert not len(my_documents_new_response.json())
 
     async def test_document_delete_already_deleted(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response1 = await client_user1.delete(
             get_document_url("document_delete", document_id=document_id)
         )
@@ -114,7 +114,7 @@ class TestDocument:
         my_documents_new_response1 = await client_user1.get(get_document_url("my_documents"))
         assert not len(my_documents_new_response1.json())
 
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response2 = await client_user1.delete(
             get_document_url("document_delete", document_id=document_id)
         )
@@ -131,7 +131,7 @@ class TestDocument:
         assert response.json() == {"detail": "Document is not found."}
 
     async def test_document_update(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         update_data = {
             'title': "Python 3.11"
         }
@@ -148,7 +148,7 @@ class TestDocument:
         assert data['title'] == update_data['title']
 
     async def test_document_text_on_page(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_text", document_id=document_id) + "?page=87",
         )
@@ -157,7 +157,7 @@ class TestDocument:
         assert "text" in data and isinstance(data['text'], str)
 
     async def test_document_text_on_page_out_of_range_positive(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_text", document_id=document_id) + "?page=102",
         )
@@ -165,7 +165,7 @@ class TestDocument:
         assert response.json() == {'detail': "Page is out of range: from 1 to 100."}
 
     async def test_document_text_on_page_out_of_range_zero(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_text", document_id=document_id) + "?page=0",
         )
@@ -173,7 +173,7 @@ class TestDocument:
         assert response.json() == {'detail': "Page is out of range: from 1 to 100."}
 
     async def test_document_text_on_page_out_of_range_negative(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_text", document_id=document_id) + "?page=-2",
         )
@@ -181,7 +181,7 @@ class TestDocument:
         assert response.json() == {'detail': "Page is out of range: from 1 to 100."}
 
     async def test_document_voice_success(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_voice", document_id=document_id) + "?page=2",
         )
@@ -189,7 +189,7 @@ class TestDocument:
         assert response.content
 
     async def test_document_voice_failed(self, client_user1: AsyncClient, documents_test_data):
-        document_id = documents_test_data.id
+        document_id = documents_test_data['_id']
         response = await client_user1.get(
             get_document_url("get_document_voice", document_id=document_id) + "?page=-1",
         )
