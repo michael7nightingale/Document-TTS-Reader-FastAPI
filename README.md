@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/michael7nightingale/Document-TTS-Reader-FastAPI/actions/workflows/codeql.yml/badge.svg)](https://github.com/michael7nightingale/Document-TTS-Reader-FastAPI/actions/workflows/codeql.yml/)
 [![Build Status](https://github.com/michael7nightingale/Document-TTS-Reader-FastAPI/actions/workflows/docker-image.yml/badge.svg)](https://github.com/michael7nightingale/Document-TTS-Reader-FastAPI/actions/workflows/docker-image.yml/)
 
-Here is FastAPI RESTful  API for managing documents (.pdf, .doc, etc.). There is CRUD for documents with main doc file and covert image uploading.
+Here is FastAPI RESTful API with MongoDB database for managing documents (.pdf, .doc, etc.). There is CRUD for documents with main doc file and covert image uploading.
 You can get test from current page or document at all. Also, you can request current page TTS audio, which will be your response )).  
 
 *NOTE*: .git root is project root;
@@ -12,14 +12,12 @@ You can get test from current page or document at all. Also, you can request cur
 ## Stack
 - `Python 3.11`;
 - `FastAPI`;
-- `PostgreSQL`;
+- `MongoDB`;
 - `fastapi_authtools` (my authentication library);
 - `gtts` text-to-speach library;
-- `langdetect` for language recognizing (detection);
-- `PyMuPDF` (fitz) library;
+- `langdetect` for managing for managing pdf files;
 - `Pydantic 2.0`;
-- `SQLAlchemy`;
-- `Asyncpg` async engine for production and development, `aiosqlite` for testing;
+- `Motor` database library;
 - `Docker`;
 - `pytest` in async mode for testing;
 - `flake8` linter;
@@ -47,6 +45,8 @@ flake8
 
 To run tests:
 ```commandline
+export MONGODB_VERSION=6.0-ubi8
+docker run --name mongodb -d mongodb/mongodb-community-server:$MONGODB_VERSION
 pytest
 ```
 
@@ -58,7 +58,6 @@ pytest -s -vv
 
 ## Running application
 You can run it using `Docker`. Run this command in the project root directory.
-
 The server is default running at `localhost:8000`.
 
 ```commandline
@@ -67,5 +66,7 @@ docker-compose up -d --build
 
 For local running using `uvicorn` run:
 ```commandline
+export MONGODB_VERSION=6.0-ubi8
+docker run --name mongodb -d mongodb/mongodb-community-server:$MONGODB_VERSION
 uvicorn app.main:create_app --reload --port 8000
 ```
