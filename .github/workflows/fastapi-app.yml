@@ -28,7 +28,7 @@ jobs:
     - name: Run database
       run: |
         export MONGODB_VERSION=6.0-ubi8
-        docker -d run --name mongodb -d mongodb/mongodb-community-server:$MONGODB_VERSION
+        docker run -d --name mongodb mongodb/mongodb-community-server:$MONGODB_VERSION
     - name: Lint with flake8
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
