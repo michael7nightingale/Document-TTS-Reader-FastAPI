@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from datetime import datetime
+from typing import Optional
 
 from app.services.patterns import check_email
 
@@ -42,4 +42,5 @@ class UserRegister(BaseModel):
 class UserShow(BaseModel):
     username: str
     email: str
-    time_created: datetime
+    first_name: Optional[str]
+    last_name: Optional[str]
