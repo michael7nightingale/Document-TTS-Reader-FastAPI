@@ -27,7 +27,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run database
       run: |
-        docker run --rm --name mongo-dev -p 37017:27017 -v ~/mongodb/data/db:/data/db -d mongo
+        export MONGODB_VERSION=6.0-ubi8
+        docker run --name mongodb -d mongodb/mongodb-community-server:$MONGODB_VERSION
     - name: Lint with flake8
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
