@@ -32,11 +32,12 @@ class DevSettings(BaseAppSettings):
     DB_DRIVER: str
     DB_HOST: str
     DB_PORT: str
+    DB_NAME: str
 
     @property
     def db_uri(self) -> str:
-        # host_address = gethostbyname(self.DB_HOST)
-        host_address = self.DB_HOST
+        host_address = gethostbyname(self.DB_HOST)
+        # host_address = self.DB_HOST
         return f"{self.DB_DRIVER}://{host_address}:{self.DB_PORT}"
 
     class Config:
