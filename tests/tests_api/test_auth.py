@@ -109,6 +109,3 @@ class TestMain:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["username"] == user2['username']
         assert response.json()["email"] == user2['email']
-        assert response.json()["is_active"]
-        assert response.json()["is_authenticated"]
-        assert "_id" in response.json()

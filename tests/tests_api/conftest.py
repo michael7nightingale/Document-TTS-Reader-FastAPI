@@ -1,5 +1,6 @@
 import os.path
 from shutil import rmtree
+from typing import Iterable
 from uuid import uuid4
 import pytest_asyncio
 from httpx import AsyncClient
@@ -17,13 +18,39 @@ from app.services.documents import get_pages_count_and_cover
 from app.services import get_name_and_extension
 
 
+class CollectionDropper:
+    __slots__ = ("db", "_collections")
+
+    def __init__(self, db, collections=None):
+        if collections is not None:
+            self.collections = collections
+        self.db = db
+
+    @property
+    def collections(self):
+        return self._collections
+
+    @collections.setter
+    def collections(self, __iterable: Iterable[str]):
+        self._collections = set(__iterable)
+
+    def drop(self) -> None:
+        for collection in self.collections:
+            self.db[collection].drop()
+
+    def __call__(self, *args, **kwargs):
+        return self.drop()
+
+
 @pytest_asyncio.fixture
 async def app() -> FastAPI:
     server = Server(test=True)
-    yield server.app
     db = server.app.state.db
-    db['users'].drop()
-    db['documents'].drop()
+    collection_dropper = CollectionDropper(db)
+    collection_dropper.collections = {"users", "documents"}
+    collection_dropper.drop()
+    yield server.app
+    collection_dropper.drop()
 
 
 @pytest_asyncio.fixture
